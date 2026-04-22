@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
-import { geocodeNeighborhood } from "@/lib/geocode";
+import { searchPlace } from "@/lib/places";
 
 export async function GET() {
   const { data, error } = await supabase
@@ -25,19 +25,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const coords = await geocodeNeighborhood(neighborhood);
+  const place = await searchPlace(place_name, neighborhood ?? "").catch(
+    () => null,
+  );
 
   const { data, error } = await supabase
     .from("spots")
     .insert({
       place_name,
       type,
-      neighborhood,
+      neighborhood: neighborhood ?? null,
       food_recs: food_recs ?? null,
       personal_note: personal_note ?? null,
-      reel_url,
-      lat: coords?.lat ?? null,
-      lng: coords?.lng ?? null,
+      reel_url: reel_url ?? null,
+      lat: place?.lat ?? null,
+      lng: place?.lng ?? null,
+      place_id: place?.placeId ?? null,
     })
     .select()
     .single();

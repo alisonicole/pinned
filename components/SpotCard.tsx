@@ -47,14 +47,26 @@ export default function SpotCard({
       )}
 
       <div className="flex items-center gap-3 pt-1">
-        <a
-          href={spot.reel_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-blue-600 hover:underline"
-        >
-          View Reel
-        </a>
+        {spot.place_id && (
+          <a
+            href={`https://www.google.com/maps/place/?q=place_id:${spot.place_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Google Maps
+          </a>
+        )}
+        {spot.reel_url && (
+          <a
+            href={spot.reel_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 hover:underline"
+          >
+            View Reel
+          </a>
+        )}
         {!spot.visited && (
           <button
             onClick={() => onMarkVisited(spot.id)}

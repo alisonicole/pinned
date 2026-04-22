@@ -10,6 +10,7 @@ export interface Spot {
   reel_url: string;
   lat: number | null;
   lng: number | null;
+  place_id: string | null;
   visited: boolean;
   created_at: string;
 }
