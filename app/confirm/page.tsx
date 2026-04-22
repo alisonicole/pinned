@@ -1,23 +1,50 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 
 function ConfirmForm() {
   const params = useSearchParams();
   const router = useRouter();
 
+  const caption = params.get("caption") ?? "";
+  const reelUrl = params.get("reel_url") ?? "";
+
   const [form, setForm] = useState({
-    place_name: params.get("place") ?? "",
-    type: params.get("type") ?? "other",
-    neighborhood: params.get("neighborhood") ?? "",
-    food_recs: params.get("food_recs") ?? "",
+    place_name: "",
+    type: "other",
+    neighborhood: "",
+    food_recs: "",
     personal_note: "",
-    reel_url: params.get("reel_url") ?? "",
+    reel_url: reelUrl,
   });
 
+  const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!caption) return;
+    setParsing(true);
+    fetch("/api/parse-reel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caption, reel_url: reelUrl }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.error) {
+          setForm((prev) => ({
+            ...prev,
+            place_name: data.place_name ?? "",
+            type: data.type ?? "other",
+            neighborhood: data.neighborhood ?? "",
+            food_recs: data.food_recs ?? "",
+          }));
+        }
+      })
+      .finally(() => setParsing(false));
+  }, []);
 
   function handleChange(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -57,6 +84,10 @@ function ConfirmForm() {
     <div className="min-h-screen p-6 max-w-md mx-auto space-y-4">
       <h1 className="text-xl font-semibold">Save this spot</h1>
 
+      {parsing && (
+        <p className="text-sm text-gray-500">Parsing with Claude...</p>
+      )}
+
       {[
         { label: "Place name", field: "place_name" },
         { label: "Neighborhood", field: "neighborhood" },
@@ -90,7 +121,7 @@ function ConfirmForm() {
 
       <button
         onClick={handleSave}
-        disabled={saving || !form.place_name || !form.neighborhood}
+        disabled={saving || parsing || !form.place_name || !form.neighborhood}
         className="w-full bg-gray-900 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
       >
         {saving ? "Saving..." : "Save spot"}
