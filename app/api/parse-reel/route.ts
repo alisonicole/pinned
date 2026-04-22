@@ -13,11 +13,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!caption || !reel_url) {
-    return NextResponse.json(
-      { error: "caption and reel_url required" },
-      { status: 400 },
-    );
+  if (!caption) {
+    return NextResponse.json({ error: "caption is required" }, { status: 400 });
   }
 
   try {
