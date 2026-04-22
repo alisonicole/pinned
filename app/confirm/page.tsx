@@ -144,7 +144,7 @@ function ConfirmForm() {
 
       <button
         onClick={handleSave}
-        disabled={saving || !form.place_name || !form.neighborhood}
+        disabled={saving || !form.place_name}
         className="w-full bg-gray-900 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
       >
         {saving ? "Saving..." : "Save spot"}
