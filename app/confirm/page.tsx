@@ -44,7 +44,7 @@ function ConfirmForm() {
         }
       })
       .finally(() => setParsing(false));
-  }, []);
+  }, [caption]);
 
   function handleChange(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
