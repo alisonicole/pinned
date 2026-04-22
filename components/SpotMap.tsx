@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
 import type { Spot, SpotType } from "@/types/spot";
 
@@ -21,6 +21,7 @@ export default function SpotMap({ spots, onSpotSelect }: SpotMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     setOptions({
@@ -36,11 +37,12 @@ export default function SpotMap({ spots, onSpotSelect }: SpotMapProps) {
         mapTypeControl: false,
         streetViewControl: false,
       });
+      setMapReady(true);
     });
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapReady || !mapInstanceRef.current) return;
 
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
@@ -64,7 +66,7 @@ export default function SpotMap({ spots, onSpotSelect }: SpotMapProps) {
         marker.addListener("click", () => onSpotSelect(spot));
         markersRef.current.push(marker);
       });
-  }, [spots, onSpotSelect]);
+  }, [spots, onSpotSelect, mapReady]);
 
   return <div ref={mapRef} className="w-full h-96 rounded-lg" />;
 }
