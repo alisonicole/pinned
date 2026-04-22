@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseReelCaption } from "@/lib/claude";
 
 export async function POST(req: NextRequest) {
-  const { caption, reel_url } = await req.json();
+  let caption: string | undefined;
+  let reel_url: string | undefined;
+
+  try {
+    const body = await req.json();
+    caption = body.caption;
+    reel_url = body.reel_url;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
   if (!caption || !reel_url) {
     return NextResponse.json(
