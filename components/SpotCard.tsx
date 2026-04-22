@@ -1,3 +1,5 @@
+"use client";
+
 import type { Spot, SpotType } from "@/types/spot";
 
 const TYPE_COLORS: Record<SpotType, string> = {
