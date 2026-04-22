@@ -52,13 +52,18 @@ function ConfirmForm() {
 
   async function handleSave() {
     setSaving(true);
-    await fetch("/api/spots", {
+    const res = await fetch("/api/spots", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     setSaving(false);
-    setSaved(true);
+    if (res.ok) {
+      setSaved(true);
+    } else {
+      const data = await res.json();
+      alert(data.error ?? "Failed to save spot");
+    }
   }
 
   if (saved) {

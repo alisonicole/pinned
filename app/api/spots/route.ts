@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
   const { place_name, type, neighborhood, food_recs, personal_note, reel_url } =
     body;
 
-  if (!place_name || !type || !neighborhood || !reel_url) {
+  if (!place_name || !type || !neighborhood) {
     return NextResponse.json(
-      { error: "place_name, type, neighborhood, reel_url required" },
+      { error: "place_name, type, neighborhood required" },
       { status: 400 },
     );
   }
