@@ -1,12 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ParsedSpot, Spot, SpotType } from "@/types/spot";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+}
 
 export async function parseReelCaption(
   caption: string,
   reelUrl: string,
 ): Promise<ParsedSpot> {
+  const client = getClient();
   const message = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 512,
@@ -27,13 +30,23 @@ Return ONLY the JSON object. No explanation, no markdown.`,
 
   const text =
     message.content[0].type === "text" ? message.content[0].text : "{}";
-  const parsed = JSON.parse(text);
+
+  let parsed: Record<string, unknown> = {};
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = {};
+  }
 
   return {
-    place_name: parsed.place_name ?? "Unknown Place",
+    place_name:
+      typeof parsed.place_name === "string"
+        ? parsed.place_name
+        : "Unknown Place",
     type: (parsed.type as SpotType) ?? "other",
-    neighborhood: parsed.neighborhood ?? "",
-    food_recs: parsed.food_recs ?? null,
+    neighborhood:
+      typeof parsed.neighborhood === "string" ? parsed.neighborhood : "",
+    food_recs: typeof parsed.food_recs === "string" ? parsed.food_recs : null,
   };
 }
 
@@ -41,6 +54,7 @@ export async function generateWeekendPlan(
   spots: Spot[],
   userInput: string,
 ): Promise<string> {
+  const client = getClient();
   const spotsContext = spots
     .filter((s) => !s.visited)
     .map(
