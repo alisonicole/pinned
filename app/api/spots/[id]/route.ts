@@ -8,9 +8,30 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
 
+  const {
+    place_name,
+    type,
+    neighborhood,
+    food_recs,
+    personal_note,
+    reel_url,
+    visited,
+  } = body;
+  const updates = Object.fromEntries(
+    Object.entries({
+      place_name,
+      type,
+      neighborhood,
+      food_recs,
+      personal_note,
+      reel_url,
+      visited,
+    }).filter(([, v]) => v !== undefined),
+  );
+
   const { data, error } = await supabase
     .from("spots")
-    .update(body)
+    .update(updates)
     .eq("id", id)
     .select()
     .single();
