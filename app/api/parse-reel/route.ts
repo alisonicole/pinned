@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsed = await parseReelCaption(caption, reel_url);
+    const parsed = await parseReelCaption(caption, reel_url ?? "");
     return NextResponse.json(parsed);
   } catch (err) {
     const message =
