@@ -46,20 +46,32 @@ function ConfirmForm() {
   async function handleNext() {
     if (!description.trim()) return;
     setParsing(true);
-    const res = await fetch("/api/parse-reel", {
+
+    const parsed = await fetch("/api/parse-reel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ caption: description, reel_url: reelUrl }),
-    });
-    const data = await res.json();
-    if (!data.error) {
-      setForm({
-        place_name: data.place_name ?? "",
-        neighborhood: data.neighborhood ?? "",
-        food_recs: data.food_recs ?? "",
-        type: data.type ?? "restaurant",
-      });
+    }).then((r) => r.json());
+
+    const placeName = parsed.place_name ?? "";
+    let neighborhood = parsed.neighborhood ?? "";
+
+    if (placeName && !neighborhood) {
+      const lookup = await fetch("/api/lookup-place", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: placeName }),
+      }).then((r) => r.json());
+      neighborhood = lookup.neighborhood ?? "";
     }
+
+    setForm({
+      place_name: placeName,
+      neighborhood,
+      food_recs: parsed.food_recs ?? "",
+      type: parsed.type ?? "restaurant",
+    });
+
     setParsing(false);
     setStep("confirm");
   }
