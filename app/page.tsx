@@ -66,15 +66,39 @@ export default function Home() {
             <SpotMap spots={spots} onSpotSelect={setSelectedSpot} />
 
             {selectedSpot && (
-              <div className="border rounded-xl p-4 bg-blue-50 text-sm">
-                <strong>{selectedSpot.place_name}</strong> -{" "}
-                {selectedSpot.neighborhood}
-                <button
-                  onClick={() => setSelectedSpot(null)}
-                  className="ml-4 text-gray-400 hover:text-gray-600"
+              <div className="border rounded-xl p-4 space-y-2 shadow-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {selectedSpot.place_name}
+                    </p>
+                    {selectedSpot.neighborhood && (
+                      <p className="text-sm text-gray-500">
+                        {selectedSpot.neighborhood}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedSpot(null)}
+                    className="text-gray-300 hover:text-gray-500 text-lg leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+                {selectedSpot.food_recs && (
+                  <p className="text-sm text-gray-700">
+                    <span className="font-medium">Try:</span>{" "}
+                    {selectedSpot.food_recs}
+                  </p>
+                )}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedSpot.place_name} ${selectedSpot.neighborhood ?? ""}`.trim())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-blue-600 hover:underline"
                 >
-                  Dismiss
-                </button>
+                  Open in Google Maps →
+                </a>
               </div>
             )}
 
