@@ -108,6 +108,7 @@ function ConfirmForm() {
     return (
       <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col gap-6 pt-16">
         <div>
+          <p className="text-xs text-green-600 font-mono">v2</p>
           <h1 className="text-2xl font-semibold text-gray-900">Where is it?</h1>
           <p className="text-sm text-gray-400 mt-1">
             Any format works — a name, a neighborhood, a vibe.
