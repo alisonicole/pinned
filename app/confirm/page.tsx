@@ -2,6 +2,24 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
+import type { SpotType } from "@/types/spot";
+
+const TYPES: SpotType[] = ["restaurant", "bar", "coffee", "hike", "other"];
+
+const TYPE_COLORS: Record<SpotType, string> = {
+  restaurant: "bg-red-100 text-red-700 border-red-200",
+  bar: "bg-purple-100 text-purple-700 border-purple-200",
+  coffee: "bg-amber-100 text-amber-700 border-amber-200",
+  hike: "bg-green-100 text-green-700 border-green-200",
+  other: "bg-gray-100 text-gray-700 border-gray-200",
+};
+
+interface ParsedForm {
+  place_name: string;
+  neighborhood: string;
+  food_recs: string;
+  type: SpotType;
+}
 
 function ConfirmForm() {
   const params = useSearchParams();
@@ -10,45 +28,40 @@ function ConfirmForm() {
   const captionParam = params.get("caption") ?? "";
   const reelUrl = params.get("reel_url") ?? "";
 
-  const [caption, setCaption] = useState(captionParam);
-  const [form, setForm] = useState({
-    place_name: "",
-    type: "other",
-    neighborhood: "",
-    food_recs: "",
-    personal_note: "",
-    reel_url: reelUrl,
-  });
-
+  const [step, setStep] = useState<"input" | "confirm">("input");
+  const [description, setDescription] = useState(captionParam);
   const [parsing, setParsing] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  async function handleParse() {
-    if (!caption) return;
+  const [form, setForm] = useState<ParsedForm>({
+    place_name: "",
+    neighborhood: "",
+    food_recs: "",
+    type: "restaurant",
+  });
+  const [note, setNote] = useState("");
+
+  async function handleNext() {
+    if (!description.trim()) return;
     setParsing(true);
     const res = await fetch("/api/parse-reel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption, reel_url: reelUrl }),
+      body: JSON.stringify({ caption: description, reel_url: reelUrl }),
     });
     const data = await res.json();
     if (!data.error) {
-      setForm((prev) => ({
-        ...prev,
+      setForm({
         place_name: data.place_name ?? "",
-        type: data.type ?? "other",
         neighborhood: data.neighborhood ?? "",
         food_recs: data.food_recs ?? "",
-      }));
-    } else {
-      alert(data.error);
+        type: data.type ?? "restaurant",
+      });
     }
     setParsing(false);
-  }
-
-  function handleChange(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setStep("confirm");
   }
 
   async function handleSave() {
@@ -56,7 +69,14 @@ function ConfirmForm() {
     const res = await fetch("/api/spots", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        place_name: form.place_name,
+        type: form.type,
+        neighborhood: form.neighborhood,
+        food_recs: form.food_recs || null,
+        personal_note: note || null,
+        reel_url: reelUrl || null,
+      }),
     });
     setSaving(false);
     if (res.ok) {
@@ -70,11 +90,9 @@ function ConfirmForm() {
   if (saved) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="text-center space-y-2">
-          <p className="text-2xl">Saved</p>
-          <p className="text-gray-500 text-sm">
-            {form.place_name} added to your spots.
-          </p>
+        <div className="text-center space-y-3">
+          <p className="text-3xl">Pinned</p>
+          <p className="text-gray-500 text-sm">{form.place_name} saved.</p>
           <button
             onClick={() => router.push("/")}
             className="text-sm text-blue-600 underline"
@@ -86,69 +104,119 @@ function ConfirmForm() {
     );
   }
 
-  return (
-    <div className="min-h-screen p-6 max-w-md mx-auto space-y-4">
-      <h1 className="text-xl font-semibold">Save this spot</h1>
+  if (step === "input") {
+    return (
+      <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col gap-6 pt-16">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Where is it?</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Any format works — a name, a neighborhood, a vibe.
+          </p>
+        </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-gray-700">
-          Describe the place
-        </label>
         <textarea
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          rows={3}
-          placeholder="e.g. Amazing udon spot in East Village, get the miso udon"
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+          placeholder="e.g. that udon place on St. Marks, or Kopitiam in Lower East Side"
+          autoFocus
+          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
         />
+
+        <button
+          onClick={handleNext}
+          disabled={parsing || !description.trim()}
+          className="w-full bg-gray-900 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
+        >
+          {parsing ? "Asking Claude..." : "Next"}
+        </button>
       </div>
+    );
+  }
 
-      <button
-        onClick={handleParse}
-        disabled={parsing || !caption}
-        className="w-full bg-blue-600 text-white rounded-xl py-2 text-sm font-medium disabled:opacity-40"
-      >
-        {parsing ? "Parsing..." : "Parse with Claude"}
-      </button>
+  return (
+    <div className="min-h-screen p-6 max-w-md mx-auto flex flex-col gap-4 pt-10">
+      <h1 className="text-xl font-semibold text-gray-900">Confirm spot</h1>
 
-      {[
-        { label: "Place name", field: "place_name" },
-        { label: "Neighborhood", field: "neighborhood" },
-        { label: "Food recs", field: "food_recs" },
-        { label: "Your note", field: "personal_note" },
-      ].map(({ label, field }) => (
-        <div key={field} className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div className="space-y-3">
+        {(
+          [
+            { label: "Place", key: "place_name" },
+            { label: "Neighborhood", key: "neighborhood" },
+            { label: "What to try", key: "food_recs" },
+          ] as { label: string; key: keyof ParsedForm }[]
+        ).map(({ label, key }) => (
+          <div key={key} className="space-y-1">
+            <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              {label}
+            </label>
+            <input
+              value={form[key] as string}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, [key]: e.target.value }))
+              }
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+          </div>
+        ))}
+
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+            Type
+          </label>
+          {typeOpen ? (
+            <div className="flex flex-wrap gap-2">
+              {TYPES.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, type: t }));
+                    setTypeOpen(false);
+                  }}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium ${TYPE_COLORS[t]}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              onClick={() => setTypeOpen(true)}
+              className={`text-xs px-3 py-1.5 rounded-full border font-medium ${TYPE_COLORS[form.type]}`}
+            >
+              {form.type}
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+            Your note
+          </label>
           <input
-            value={form[field as keyof typeof form]}
-            onChange={(e) => handleChange(field, e.target.value)}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Optional"
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
           />
         </div>
-      ))}
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium text-gray-700">Type</label>
-        <select
-          value={form.type}
-          onChange={(e) => handleChange("type", e.target.value)}
-          className="w-full border rounded-lg px-3 py-2 text-sm"
-        >
-          {["restaurant", "bar", "coffee", "hike", "other"].map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving || !form.place_name}
-        className="w-full bg-gray-900 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
-      >
-        {saving ? "Saving..." : "Save spot"}
-      </button>
+      <div className="flex gap-3 pt-2">
+        <button
+          onClick={() => setStep("input")}
+          className="flex-1 border rounded-xl py-3 text-sm font-medium text-gray-600"
+        >
+          Back
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saving || !form.place_name}
+          className="flex-2 flex-grow bg-gray-900 text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40"
+        >
+          {saving ? "Saving..." : "Save spot"}
+        </button>
+      </div>
     </div>
   );
 }
