@@ -47,16 +47,14 @@ export default function SpotCard({
       )}
 
       <div className="flex items-center gap-3 pt-1">
-        {spot.place_id && (
-          <a
-            href={`https://www.google.com/maps/place/?q=place_id:${spot.place_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline"
-          >
-            Google Maps
-          </a>
-        )}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${spot.place_name} ${spot.neighborhood ?? ""}`.trim())}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Google Maps
+        </a>
         {spot.reel_url && (
           <a
             href={spot.reel_url}
